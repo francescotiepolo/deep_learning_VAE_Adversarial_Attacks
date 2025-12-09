@@ -81,7 +81,23 @@ def pgd_attack(model, data, target, criterion, args):
     # Hint: to make sure to each time get a new detached copy of the data,
     # to avoid accumulating gradients from previous iterations
     # Hint: it can be useful to use toch.nograd()
-    raise NotImplementedError()     
+    perturbed_data = data.clone().detach()
+    orgininal_data = data.clone().detach()
+
+    for _ in range(num_iter):
+        perturbed_data.requires_grad = True
+        outputs = model(perturbed_data)
+        loss = criterion(outputs, target)
+
+        model.zero_grad()
+        loss.backward()
+        data_grad = perturbed_data.grad.data
+
+        with torch.no_grad():
+            perturbed_data = perturbed_data + alpha * data_grad.sign()
+            perturbation = torch.clamp(perturbed_data - orgininal_data, min=-epsilon, max=epsilon)
+            perturbed_data = torch.clamp(orgininal_data + perturbation, orgininal_data.min(), orgininal_data.max()).detach()
+    
     return perturbed_data
 
 
@@ -115,7 +131,8 @@ def test_attack(model, test_loader, attack_function, attack_args):
         elif attack_function == PGD:
             # Get the perturbed data using the PGD attack
             # Re-classify the perturbed image
-            raise NotImplementedError()
+            perturbed_data = pgd_attack(model, data, target, criterion, attack_args)
+            output = model(perturbed_data)
         else:
             print(f"Unknown attack {attack_function}")
 
