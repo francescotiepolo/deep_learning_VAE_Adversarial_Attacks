@@ -81,8 +81,9 @@ def pgd_attack(model, data, target, criterion, args):
     # Hint: to make sure to each time get a new detached copy of the data,
     # to avoid accumulating gradients from previous iterations
     # Hint: it can be useful to use toch.nograd()
-    perturbed_data = data.clone().detach()
-    orgininal_data = data.clone().detach()
+    device = data.device
+    perturbed_data = data.clone().detach().to(device)
+    orgininal_data = data.clone().detach().to(device)
 
     for _ in range(num_iter):
         perturbed_data.requires_grad = True
@@ -96,13 +97,18 @@ def pgd_attack(model, data, target, criterion, args):
         with torch.no_grad():
             perturbed_data = perturbed_data + alpha * data_grad.sign()
             perturbation = torch.clamp(perturbed_data - orgininal_data, min=-epsilon, max=epsilon)
-            perturbed_data = torch.clamp(orgininal_data + perturbation, orgininal_data.min(), orgininal_data.max()).detach()
+            perturbed_data = torch.clamp(orgininal_data + perturbation, orgininal_data.min(), orgininal_data.max()).detach().to(device)
     
     return perturbed_data
 
 
 def test_attack(model, test_loader, attack_function, attack_args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = torch.device("mps")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
     correct = 0
     criterion = nn.CrossEntropyLoss()
     adv_examples = []
