@@ -12,12 +12,7 @@ def main(args):
     print("Arguments:")
     for arg in vars(args):
         print(f"{arg}: {getattr(args, arg)}")
-    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        device = torch.device("mps")
-    elif torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
     strategy_args = {STANDARD: None, 
                  FGSM: {ALPHA: args.alpha_fgsm, EPSILON: args.epsilon_fgsm}, 

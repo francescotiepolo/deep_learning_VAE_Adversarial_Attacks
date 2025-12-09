@@ -103,12 +103,7 @@ def pgd_attack(model, data, target, criterion, args):
 
 
 def test_attack(model, test_loader, attack_function, attack_args):
-    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        device = torch.device("mps")
-    elif torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     correct = 0
     criterion = nn.CrossEntropyLoss()
     adv_examples = []
